@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Snake Game</title>
+    <link rel="stylesheet" href="Lin.css">
+</head>
+<body>
+    <canvas id="gameCanvas" width="500" height="500"></canvas>
+    <div>
+        <label for="player1Color">Player 1 Color:</label>
+        <input type="color" id="player1Color" value="#ff0000">
+        <label for="player2Color">Player 2 Color:</label>
+        <input type="color" id="player2Color" value="#00ff00">
+        <label for="speedRange">Speed:</label>
+        <input type="range" id="speedRange" min="1" max="10" value="5">
+        <button id="restartButton">Restart Game</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const speedRange = document.getElementById('speedRange');
+            const player1ColorInput = document.getElementById('player1Color');
+            const player2ColorInput = document.getElementById('player2Color');
+            const restartButton = document.getElementById('restartButton');
+
+            const blockSize = 20;
+            const canvasSize = 500;
+            const numBlocks = canvasSize / blockSize;
+            let speed = parseInt(speedRange.value);
+            let player1Color = player1ColorInput.value;
+            let player2Color = player2ColorInput.value;
+            let gameOver = false;
+
+            let player1 = {
+                x: 3,
+                y: 3,
+                dx: 1,
+                dy: 0,
+                trail: [],
+                tail: 5,
+                color: player1Color,
+            };
+
+            let player2 = {
+                x: 20,
+                y: 20,
+                dx: -1,
+                dy: 0,
+                trail: [],
+                tail: 5,
+                color: player2Color,
+            };
+
+            window.addEventListener('keydown', e => {
+                if (gameOver) return;
+                switch(e.key) {
+                    // Player 1 controls
+                    case 'w':
+                        if(player1.dy === 0) {
+                            player1.dx = 0;
+                            player1.dy = -1;
+                        }
+                        break;
+                    case 'a':
+                        if(player1.dx === 0) {
+                            player1.dx = -1;
+                            player1.dy = 0;
+                        }
+                        break;
+                    case 's':
+                        if(player1.dy === 0) {
+                            player1.dx = 0;
+                            player1.dy = 1;
+                        }
+                        break;
+                    case 'd':
+                        if(player1.dx === 0) {
+                            player1.dx = 1;
+                            player1.dy = 0;
+                        }
+                        break;
+                    // Player 2 controls
+                    case 'i':
+                        if(player2.dy === 0) {
+                            player2.dx = 0;
+                            player2.dy = -1;
+                        }
+                        break;
+                    case 'j':
+                        if(player2.dx === 0) {
+                            player2.dx = -1;
+                            player2.dy = 0;
+                        }
+                        break;
+                    case 'k':
+                        if(player2.dy === 0) {
+                            player2.dx = 0;
+                            player2.dy = 1;
+                        }
+                        break;
+                    case 'l':
+                        if(player2.dx === 0) {
+                            player2.dx = 1;
+                            player2.dy = 0;
+                        }
+                        break;
+                }
+            });
+
+            function update() {
+                if (gameOver) return;
+                player1.x += player1.dx;
+                player1.y += player1.dy;
+                player2.x += player2.dx;
+                player2.y += player2.dy;
+
+                if (checkCollision(player1) || checkCollision(player2)) {
+                    gameOver = true;
+                    alert("Game Over!");
+                    return;
+                }
+
+                if (player1.x < 0 || player1.x >= numBlocks || player1.y < 0 || player1.y >= numBlocks) {
+                    player1.x = Math.abs(player1.x % numBlocks);
+                    player1.y = Math.abs(player1.y % numBlocks);
+                }
+
+                if (player2.x < 0 || player2.x >= numBlocks || player2.y < 0 || player2.y >= numBlocks) {
+                    player2.x = Math.abs(player2.x % numBlocks);
+                    player2.y = Math.abs(player2.y % numBlocks);
+                }
+
+                player1.trail.push({ x: player1.x, y: player1.y });
+                player2.trail.push({ x: player2.x, y: player2.y });
+
+                while (player1.trail.length > player1.tail) {
+                    player1.trail.shift();
+                }
+                while (player2.trail.length > player2.tail) {
+                    player2.trail.shift();
+                }
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvasSize, canvasSize);
+
+                ctx.fillStyle = player1.color;
+                player1.trail.forEach(block => {
+                    ctx.fillRect(block.x * blockSize, block.y * blockSize, blockSize - 1, blockSize - 1);
+                });
+
+                ctx.fillStyle = player2.color;
+                player2.trail.forEach(block => {
+                    ctx.fillRect(block.x * blockSize, block.y * blockSize, blockSize - 1, blockSize - 1);
+                });
+            }
+
+            function gameLoop() {
+                if (gameOver) return;
+                update();
+                draw();
+                setTimeout(gameLoop, 1000 / speed);
+            }
+
+            function checkCollision(player) {
+                const head = { x: player.x, y: player.y };
+                return player.trail.some(segment => segment.x === head.x && segment.y === head.y);
+            }
+
+            gameLoop();
+
+            speedRange.addEventListener('input', () => {
+                speed = parseInt(speedRange.value);
+            });
+
+            player1ColorInput.addEventListener('input', () => {
+                player1.color = player1ColorInput.value;
+            });
+
+            player2ColorInput.addEventListener('input', () => {
+                player2.color = player2ColorInput.value;
+            });
+
+            restartButton.addEventListener('click', () => {
+                gameOver = false;
+                player1 = {
+                    x: 3,
+                    y: 3,
+                    dx: 1,
+                    dy: 0,
+                    trail: [],
+                    tail: 5,
+                    color: player1Color,
+                };
+                player2 = {
+                    x: 20,
+                    y: 20,
+                    dx: -1,
+                    dy: 0,
+                    trail: [],
+                    tail: 5,
+                    color: player2Color,
+                };
+                gameLoop();
+            });
+        });
+    </script>
+</body>
+</html>
